@@ -1,0 +1,30 @@
+{
+  "name": "BuildRight",
+  "version": "1.0.4-universal-pricing",
+  "package": "com.buildright.app",
+  "kotlin_files": 39,
+  "includes": [
+    "Compose UI",
+    "Project persistence",
+    "Build Engine",
+    "Visual/Designer models",
+    "Framing engines",
+    "Cut optimization",
+    "Cost intelligence",
+    "Code/permit intelligence",
+    "Smart assistant command layer",
+    "Field mode state",
+    "Project integration bridge",
+    "GitHub Actions APK build"
+  ],
+  "universalPricing": {
+    "productPageImport": true,
+    "robotsAware": true,
+    "packageNormalization": true,
+    "persistedQuotes": true,
+    "cheapestSplitPlan": true,
+    "fewestStoresPlan": true,
+    "configurableProviders": true,
+    "restrictedSourceBypass": false
+  }
+}
