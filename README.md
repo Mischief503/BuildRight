@@ -30,7 +30,7 @@ This repository is the consolidated setup: the working Android UI plus the Desig
 - `com.buildright.app.ProjectIntegration` — bridge from the saved Project to all feature engines
 
 ## Build on GitHub
-The included `.github/workflows/android-build.yml` installs Java 17 and Gradle 8.11.1 on the runner, builds `:app:assembleDebug`, then uploads `app-debug.apk` as a workflow artifact.
+The included `.github/workflows/main.yml` installs Java 17 + Android SDK, runs unit tests, then builds `:app:assembleDebug` via the Gradle 8.9 wrapper, then uploads `app-debug.apk` as a workflow artifact.
 
 1. Create a GitHub repository.
 2. Upload the contents of this folder to the repository root.
