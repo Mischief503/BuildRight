@@ -26,6 +26,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 import kotlin.math.roundToInt
+import com.buildright.intelligence.woodworking.FurnitureJointRecord
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -178,7 +179,13 @@ data class Project(
     val priceHistory: MutableList<PriceHistoryRecord> = mutableListOf(),
     val priceQuotes: MutableList<ProjectPriceQuote> = mutableListOf(),
     val materials: MutableList<MaterialItem> = mutableListOf(),
-    val tasks: MutableList<TaskItem> = mutableListOf()
+    val tasks: MutableList<TaskItem> = mutableListOf(),
+    // PRIOR-CHAT RECOVERY / IMPLEMENTED: Intelligence 16–18 woodworking persistence
+    var woodSpecies: String = "oak",
+    var moistureContentPercent: Double = 12.0,
+    var equilibriumMoisturePercent: Double = 8.0,
+    var crossGrainRigidAttach: Boolean = false,
+    val furnitureJoints: MutableList<FurnitureJointRecord> = mutableListOf()
 ) {
     val area: Double get() = width * length
     val perimeter: Double get() = if (width > 0 && length > 0) 2 * (width + length) else 0.0
@@ -316,6 +323,19 @@ class ProjectStore(private val context: Context) {
                 })
             }
         })
+        put("woodSpecies", p.woodSpecies)
+        put("moistureContentPercent", p.moistureContentPercent)
+        put("equilibriumMoisturePercent", p.equilibriumMoisturePercent)
+        put("crossGrainRigidAttach", p.crossGrainRigidAttach)
+        put("furnitureJoints", JSONArray().apply {
+            p.furnitureJoints.forEach { j ->
+                put(JSONObject().apply {
+                    put("id", j.id); put("jointType", j.jointType); put("safety", j.safety)
+                    put("autoMarker", j.autoMarker); put("hold", j.hold); put("notes", j.notes)
+                    put("memberA", j.memberA); put("memberB", j.memberB)
+                })
+            }
+        })
     }
 
     private fun projectFromJson(o: JSONObject): Project {
@@ -357,6 +377,24 @@ class ProjectStore(private val context: Context) {
             county = o.optString("county", ""),
             city = o.optString("city", "")
         )
+        p.woodSpecies = o.optString("woodSpecies", "oak")
+        p.moistureContentPercent = o.optDouble("moistureContentPercent", 12.0)
+        p.equilibriumMoisturePercent = o.optDouble("equilibriumMoisturePercent", 8.0)
+        p.crossGrainRigidAttach = o.optBoolean("crossGrainRigidAttach", false)
+        val furnitureJoints = o.optJSONArray("furnitureJoints") ?: JSONArray()
+        for (i in 0 until furnitureJoints.length()) {
+            val x = furnitureJoints.getJSONObject(i)
+            p.furnitureJoints += FurnitureJointRecord(
+                id = x.optString("id", java.util.UUID.randomUUID().toString()),
+                jointType = x.optString("jointType", ""),
+                safety = x.optString("safety", "YELLOW"),
+                autoMarker = x.optString("autoMarker", ""),
+                hold = x.optBoolean("hold", false),
+                notes = x.optString("notes", ""),
+                memberA = x.optString("memberA", ""),
+                memberB = x.optString("memberB", "")
+            )
+        }
         val openings = o.optJSONArray("openings") ?: JSONArray()
         for (i in 0 until openings.length()) {
             val x = openings.getJSONObject(i)
@@ -852,6 +890,10 @@ fun applyTemplateDefaults(p: Project) {
         "Deck" -> { if (p.width == 0.0) p.width = 12.0; if (p.length == 0.0) p.length = 16.0; if (p.height == 0.0) p.height = 2.0 }
         "Fence" -> { if (p.width == 0.0) p.width = 50.0; if (p.length == 0.0) p.length = 1.0; if (p.height == 0.0) p.height = 6.0 }
         "Workbench" -> { if (p.width == 0.0) p.width = 2.5; if (p.length == 0.0) p.length = 6.0; if (p.height == 0.0) p.height = 3.0 }
+        "Furniture" -> {
+            if (p.width == 0.0) p.width = 2.5; if (p.length == 0.0) p.length = 5.0; if (p.height == 0.0) p.height = 2.5
+            p.woodSpecies = "oak"; p.moistureContentPercent = 12.0; p.equilibriumMoisturePercent = 8.0
+        }
         "Raised Bed" -> { if (p.width == 0.0) p.width = 4.0; if (p.length == 0.0) p.length = 8.0; if (p.height == 0.0) p.height = 1.5 }
     }
 }
@@ -871,6 +913,17 @@ fun seedStarterPlan(p: Project) {
         "Fence" -> {
             p.tasks += listOf(TaskItem(title = "Mark fence line"), TaskItem(title = "Locate utilities"), TaskItem(title = "Set posts"), TaskItem(title = "Install rails"), TaskItem(title = "Install pickets/panels"), TaskItem(title = "Install gate and finish"))
             p.materials += listOf(MaterialItem(name = "Fence posts", quantity = kotlin.math.ceil(p.width / 8.0) + 1, unit = "pcs"), MaterialItem(name = "Concrete mix", quantity = kotlin.math.ceil(p.width / 8.0) + 1, unit = "bags"))
+        }
+        "Furniture" -> {
+            p.tasks += listOf(
+                TaskItem(title = "Mill stock and cut list"),
+                TaskItem(title = "Cut joinery (mortise/tenon or alternate)"),
+                TaskItem(title = "Dry assemble and check square"),
+                TaskItem(title = "Glue and clamp base"),
+                TaskItem(title = "Attach top with movement-safe fasteners"),
+                TaskItem(title = "Finish and acclimate check")
+            )
+            p.notes = (p.notes + "\nIntelligence 16–18: see Intelligence tab for cut list, joinery safety, moisture.").trim()
         }
         else -> {
             p.tasks += listOf(TaskItem(title = "Finalize measurements"), TaskItem(title = "Create material list"), TaskItem(title = "Prepare work area"), TaskItem(title = "Build"), TaskItem(title = "Inspect and finish"))

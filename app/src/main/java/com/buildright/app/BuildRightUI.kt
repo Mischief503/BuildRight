@@ -55,6 +55,7 @@ import com.buildright.cost.RetailerIdentity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.buildright.intelligence.woodworking.IntelligenceScreen
 
 val BuildRightLightColors = lightColorScheme(
     primary = Color(0xFF155EEF),
@@ -84,7 +85,7 @@ val BuildRightDarkColors = darkColorScheme(
 
 private enum class RootScreen { DASHBOARD, PROJECT, SETTINGS }
 private enum class ProjectScreen {
-    OVERVIEW, DESIGNER, BUILD, MATERIALS, FIELD, COSTS, CODE, ASSISTANT, TASKS, NOTES
+    OVERVIEW, DESIGNER, BUILD, MATERIALS, FIELD, COSTS, CODE, ASSISTANT, TASKS, NOTES, INTELLIGENCE
 }
 
 private data class NavItem(val screen: ProjectScreen, val label: String, val icon: ImageVector)
@@ -118,7 +119,7 @@ fun BuildRightRoot(
                     onNewProject = { type ->
                         val p = Project(name = "New $type", type = type)
                         applyTemplateDefaults(p)
-                        if (type == "Shed") seedStarterPlan(p)
+                        if (type == "Shed" || type == "Furniture") seedStarterPlan(p)
                         projects.add(0, p)
                         onPersist()
                         selectedProjectId = p.id
@@ -217,6 +218,7 @@ private fun BuildRightDashboard(
                     QuickTemplate("Deck", Icons.Outlined.Deck) { onNewProject("Deck") }
                     QuickTemplate("Fence", Icons.Outlined.ViewDay) { onNewProject("Fence") }
                     QuickTemplate("Workbench", Icons.Outlined.Handyman) { onNewProject("Workbench") }
+                    QuickTemplate("Furniture", Icons.Outlined.TableRestaurant) { onNewProject("Furniture") }
                     QuickTemplate("Custom", Icons.Outlined.Draw) { onNewProject("Custom") }
                 }
             }
@@ -353,6 +355,7 @@ private fun ProjectWorkspace(
                             ProjectScreen.MATERIALS to "Materials",
                             ProjectScreen.COSTS to "Costs",
                             ProjectScreen.CODE to "Code & permits",
+                            ProjectScreen.INTELLIGENCE to "Intelligence",
                             ProjectScreen.TASKS to "Tasks",
                             ProjectScreen.NOTES to "Notes"
                         ).forEach { (screen, label) ->
@@ -391,6 +394,7 @@ private fun ProjectWorkspace(
                 ProjectScreen.ASSISTANT -> AssistantScreen(project, onNavigate, onChanged)
                 ProjectScreen.TASKS -> TasksScreenModern(project, onChanged)
                 ProjectScreen.NOTES -> NotesScreenModern(project, onChanged)
+                ProjectScreen.INTELLIGENCE -> IntelligenceScreen(project, onChanged)
             }
         }
     }
@@ -457,7 +461,8 @@ private fun OverviewDashboard(project: Project, onNavigate: (ProjectScreen) -> U
                 Triple("Materials", Icons.Outlined.Inventory2, ProjectScreen.MATERIALS),
                 Triple("Costs", Icons.Outlined.Payments, ProjectScreen.COSTS),
                 Triple("Code & permits", Icons.Outlined.Gavel, ProjectScreen.CODE),
-                Triple("Field mode", Icons.Outlined.Checklist, ProjectScreen.FIELD)
+                Triple("Field mode", Icons.Outlined.Checklist, ProjectScreen.FIELD),
+                Triple("Intelligence", Icons.Outlined.Psychology, ProjectScreen.INTELLIGENCE)
             ), onNavigate)
         }
         item {
